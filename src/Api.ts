@@ -1,5 +1,5 @@
 import * as crypto from 'crypto';
-import * as request from 'request';
+import * as superagent from 'superagent';
 
 export class Api {
     private static NNA_BASE_ENDPOINT = 'https://gdcportalgw.its-mo.com/gworchest_160803EC/gdc';
@@ -14,71 +14,39 @@ export class Api {
         }
     }
 
-    public static connect(
+    public async connectAsync(
         regionCode: string,
         locale: string,
-        baseEndpoint: string,
-        callback: (err?: Error, response?) => void): void {
-        request.post({
-            url: Api.getBaseEndpoint(regionCode, baseEndpoint) + '/InitialApp.php',
-            form: {
+        baseEndpoint: string) {
+        return await this.postForm(Api.getBaseEndpoint(regionCode, baseEndpoint) + '/InitialApp.php',
+            {
                 'initial_app_strings': Api.INITIAL_APP_STRINGS,
                 'RegionCode': regionCode,
                 'lg': locale
-            }
-        },
-        (err, response, body) => {
-            if (err) {
-                return callback(err);
-            }
-
-            if (response.statusCode !== 200) {
-                return callback(new Error('Response was status code: ' + response.statusCode + ' (' + response.statusMessage + ')'));
-            }
-
-            const parsedBody = JSON.parse(body);
-
-            return callback(undefined, parsedBody);
-        });
+            });
     }
 
-    public static login(
+    public async loginAsync(
         regionCode: string,
         locale: string,
         userId: string,
         password: string,
         passwordEncryptionKey: string,
-        baseEndpoint: string,
-        callback: (err?: Error, response?) => void): void {
+        baseEndpoint: string) {
 
         const encryptedPassword = Api.encryptPassword(password, passwordEncryptionKey);
 
-        request.post({
-            url: Api.getBaseEndpoint(regionCode, baseEndpoint) + '/UserLoginRequest.php',
-            form: {
+        return await this.postForm(Api.getBaseEndpoint(regionCode, baseEndpoint) + '/UserLoginRequest.php',
+            {
                 'initial_app_strings': Api.INITIAL_APP_STRINGS,
                 'RegionCode': regionCode,
                 'lg': locale,
                 'UserId': userId,
                 'Password': encryptedPassword
-            }
-        },
-        (err, response, body) => {
-            if (err) {
-                return callback(err);
-            }
-
-            if (response.statusCode !== 200) {
-                return callback(new Error('Response was status code: ' + response.statusCode + ' (' + response.statusMessage + ')'));
-            }
-
-            const parsedBody = JSON.parse(body);
-
-            callback(undefined, parsedBody);
-        });
+            });
     }
 
-    public static requestStatus(
+    public async requestStatusAsync(
         regionCode: string,
         locale: string,
         customSessionId: string,
@@ -86,11 +54,9 @@ export class Api {
         gdcUserId: string,
         vin: string,
         timeZone: string,
-        baseEndpoint: string,
-        callback: (err?: Error, response?) => void): void {
-        request.post({
-            url: Api.getBaseEndpoint(regionCode, baseEndpoint) + '/BatteryStatusCheckRequest.php',
-            form: {
+        baseEndpoint: string) {
+        return await this.postForm(Api.getBaseEndpoint(regionCode, baseEndpoint) + '/BatteryStatusCheckRequest.php',
+            {
                 'initial_app_strings': Api.INITIAL_APP_STRINGS,
                 'RegionCode': regionCode,
                 'lg': locale,
@@ -99,24 +65,10 @@ export class Api {
                 'UserId': gdcUserId,
                 'VIN': vin,
                 'tz': timeZone
-            }
-        },
-        (err, response, body) => {
-            if (err) {
-                return callback(err);
-            }
-
-            if (response.statusCode !== 200) {
-                return callback(new Error('Response was status code: ' + response.statusCode + ' (' + response.statusMessage + ')'));
-            }
-
-            const parsedBody = JSON.parse(body);
-
-            callback(undefined, parsedBody);
-        });
+            });
     }
 
-    public static requestStatusResult(
+    public async requestStatusResultAsync(
         regionCode: string,
         locale: string,
         customSessionId: string,
@@ -124,11 +76,138 @@ export class Api {
         vin: string,
         timeZone: string,
         resultKey: string,
-        baseEndpoint: string,
-        callback: (err?: Error, response?) => void): void {
-        request.post({
-            url: Api.getBaseEndpoint(regionCode, baseEndpoint) + '/BatteryStatusCheckResultRequest.php',
-            form: {
+        baseEndpoint: string) {
+        return await this.postForm(Api.getBaseEndpoint(regionCode, baseEndpoint) + '/BatteryStatusCheckResultRequest.php', {
+            'initial_app_strings': Api.INITIAL_APP_STRINGS,
+            'RegionCode': regionCode,
+            'lg': locale,
+            'custom_sessionid': customSessionId,
+            'DCMID': dcmId,
+            'VIN': vin,
+            'tz': timeZone,
+            'resultKey': resultKey
+        });
+    }
+
+    public async requestCachedStatusAsync(
+        regionCode: string,
+        locale: string,
+        customSessionId: string,
+        dcmId: string,
+        gdcUserId: string,
+        vin: string,
+        timeZone: string,
+        baseEndpoint: string) {
+        return await this.postForm(Api.getBaseEndpoint(regionCode, baseEndpoint) + '/BatteryStatusRecordsRequest.php',
+            {
+                'initial_app_strings': Api.INITIAL_APP_STRINGS,
+                'RegionCode': regionCode,
+                'lg': locale,
+                'custom_sessionid': customSessionId,
+                'DCMID': dcmId,
+                'UserId': gdcUserId,
+                'VIN': vin,
+                'tz': timeZone
+            });
+    }
+
+    public async requestClimateControlStatusAsync(
+        regionCode: string,
+        locale: string,
+        customSessionId: string,
+        dcmId: string,
+        gdcUserId: string,
+        vin: string,
+        timeZone: string,
+        baseEndpoint: string) {
+        return await this.postForm(Api.getBaseEndpoint(regionCode, baseEndpoint) + '/RemoteACRecordsRequest.php', {
+            'initial_app_strings': Api.INITIAL_APP_STRINGS,
+            'RegionCode': regionCode,
+            'lg': locale,
+            'custom_sessionid': customSessionId,
+            'DCMID': dcmId,
+            'UserId': gdcUserId,
+            'VIN': vin,
+            'tz': timeZone
+        });
+    }
+
+    public async requestClimateControlTurnOnAsync(
+        regionCode: string,
+        locale: string,
+        customSessionId: string,
+        dcmId: string,
+        gdcUserId: string,
+        vin: string,
+        timeZone: string,
+        baseEndpoint: string) {
+        return await this.postForm(Api.getBaseEndpoint(regionCode, baseEndpoint) + '/ACRemoteRequest.php',
+            {
+                'initial_app_strings': Api.INITIAL_APP_STRINGS,
+                'RegionCode': regionCode,
+                'lg': locale,
+                'custom_sessionid': customSessionId,
+                'DCMID': dcmId,
+                'UserId': gdcUserId,
+                'VIN': vin,
+                'tz': timeZone
+            });
+    }
+
+    public async requestClimateControlTurnOnResultAsync(
+        regionCode: string,
+        locale: string,
+        customSessionId: string,
+        dcmId: string,
+        vin: string,
+        timeZone: string,
+        resultKey: string,
+        baseEndpoint: string) {
+        return await this.postForm(Api.getBaseEndpoint(regionCode, baseEndpoint) + '/ACRemoteResult.php', {
+            'initial_app_strings': Api.INITIAL_APP_STRINGS,
+            'RegionCode': regionCode,
+            'lg': locale,
+            'custom_sessionid': customSessionId,
+            'DCMID': dcmId,
+            'VIN': vin,
+            'tz': timeZone,
+            'resultKey': resultKey
+        });
+    }
+
+    public async requestClimateControlTurnOffAsync(
+        regionCode: string,
+        locale: string,
+        customSessionId: string,
+        dcmId: string,
+        gdcUserId: string,
+        vin: string,
+        timeZone: string,
+        baseEndpoint: string) {
+        return await this.postForm(Api.getBaseEndpoint(regionCode, baseEndpoint) + '/ACRemoteOffRequest.php',
+            {
+                'initial_app_strings': Api.INITIAL_APP_STRINGS,
+                'RegionCode': regionCode,
+                'lg': locale,
+                'custom_sessionid': customSessionId,
+                'DCMID': dcmId,
+                'UserId': gdcUserId,
+                'VIN': vin,
+                'tz': timeZone
+            });
+    }
+
+    public async requestClimateControlTurnOffResultAsync(
+        regionCode: string,
+        locale: string,
+        customSessionId: string,
+        dcmId: string,
+        vin: string,
+        timeZone: string,
+        resultKey: string,
+        baseEndpoint: string) {
+        return await this.postForm(Api.getBaseEndpoint(regionCode, baseEndpoint) + '/ACRemoteOffResult.php',
+            {
                 'initial_app_strings': Api.INITIAL_APP_STRINGS,
                 'RegionCode': regionCode,
                 'lg': locale,
@@ -137,24 +216,10 @@ export class Api {
                 'VIN': vin,
                 'tz': timeZone,
                 'resultKey': resultKey
-            }
-        },
-        (err, response, body) => {
-            if (err) {
-                return callback(err);
-            }
-
-            if (response.statusCode !== 200) {
-                return callback(new Error('Response was status code: ' + response.statusCode + ' (' + response.statusMessage + ')'));
-            }
-
-            const parsedBody = JSON.parse(body);
-
-            callback(undefined, parsedBody);
-        });
+            });
     }
 
-    public static requestCachedStatus(
+    public async requestChargingStartAsync(
         regionCode: string,
         locale: string,
         customSessionId: string,
@@ -162,11 +227,9 @@ export class Api {
         gdcUserId: string,
         vin: string,
         timeZone: string,
-        baseEndpoint: string,
-        callback: (err?: Error, response?) => void): void {
-        request.post({
-            url: Api.getBaseEndpoint(regionCode, baseEndpoint) + '/BatteryStatusRecordsRequest.php',
-            form: {
+        baseEndpoint: string) {
+        return await this.postForm(Api.getBaseEndpoint(regionCode, baseEndpoint) + '/BatteryRemoteChargingRequest.php',
+            {
                 'initial_app_strings': Api.INITIAL_APP_STRINGS,
                 'RegionCode': regionCode,
                 'lg': locale,
@@ -175,249 +238,28 @@ export class Api {
                 'UserId': gdcUserId,
                 'VIN': vin,
                 'tz': timeZone
-            }
-        },
-        (err, response, body) => {
-            if (err) {
-                return callback(err);
-            }
-
-            if (response.statusCode !== 200) {
-                return callback(new Error('Response was status code: ' + response.statusCode + ' (' + response.statusMessage + ')'));
-            }
-
-            const parsedBody = JSON.parse(body);
-
-            callback(undefined, parsedBody);
-        });
+            });
     }
 
-    public static requestClimateControlStatus(
-        regionCode: string,
-        locale: string,
-        customSessionId: string,
-        dcmId: string,
-        gdcUserId: string,
-        vin: string,
-        timeZone: string,
-        baseEndpoint: string,
-        callback: (err?: Error, response?) => void): void {
-        request.post({
-            url: Api.getBaseEndpoint(regionCode, baseEndpoint) + '/RemoteACRecordsRequest.php',
-            form: {
-                'initial_app_strings': Api.INITIAL_APP_STRINGS,
-                'RegionCode': regionCode,
-                'lg': locale,
-                'custom_sessionid': customSessionId,
-                'DCMID': dcmId,
-                'UserId': gdcUserId,
-                'VIN': vin,
-                'tz': timeZone
+    private async postForm(url: string, form: object) {
+        try {
+            const beforeTimestamp = Date.now();
+            console.log(url);
+            console.log(form);
+            const response = await superagent
+                .post(url)
+                .type('form')
+                .set('Accept', 'application/json')
+                .send(form);
+            if (response.status !== 200) {
+                throw new Error('Response was status code: ' + response.status + ' (' + response.text + ')');
             }
-        },
-        (err, response, body) => {
-            if (err) {
-                return callback(err);
-            }
-
-            if (response.statusCode !== 200) {
-                return callback(new Error('Response was status code: ' + response.statusCode + ' (' + response.statusMessage + ')'));
-            }
-
-            const parsedBody = JSON.parse(body);
-
-            callback(undefined, parsedBody);
-        });
-    }
-
-    public static requestClimateControlTurnOn(
-        regionCode: string,
-        locale: string,
-        customSessionId: string,
-        dcmId: string,
-        gdcUserId: string,
-        vin: string,
-        timeZone: string,
-        baseEndpoint: string,
-        callback: (err?: Error, response?) => void): void {
-        request.post({
-            url: Api.getBaseEndpoint(regionCode, baseEndpoint) + '/ACRemoteRequest.php',
-            form: {
-                'initial_app_strings': Api.INITIAL_APP_STRINGS,
-                'RegionCode': regionCode,
-                'lg': locale,
-                'custom_sessionid': customSessionId,
-                'DCMID': dcmId,
-                'UserId': gdcUserId,
-                'VIN': vin,
-                'tz': timeZone
-            }
-        },
-        (err, response, body) => {
-            if (err) {
-                return callback(err);
-            }
-
-            if (response.statusCode !== 200) {
-                return callback(new Error('Response was status code: ' + response.statusCode + ' (' + response.statusMessage + ')'));
-            }
-
-            const parsedBody = JSON.parse(body);
-
-            callback(undefined, parsedBody);
-        });
-    }
-
-    public static requestClimateControlTurnOnResult(
-        regionCode: string,
-        locale: string,
-        customSessionId: string,
-        dcmId: string,
-        vin: string,
-        timeZone: string,
-        resultKey: string,
-        baseEndpoint: string,
-        callback: (err?: Error, response?) => void): void {
-        request.post({
-            url: Api.getBaseEndpoint(regionCode, baseEndpoint) + '/ACRemoteResult.php',
-            form: {
-                'initial_app_strings': Api.INITIAL_APP_STRINGS,
-                'RegionCode': regionCode,
-                'lg': locale,
-                'custom_sessionid': customSessionId,
-                'DCMID': dcmId,
-                'VIN': vin,
-                'tz': timeZone,
-                'resultKey': resultKey
-            }
-        },
-        (err, response, body) => {
-            if (err) {
-                return callback(err);
-            }
-
-            if (response.statusCode !== 200) {
-                return callback(new Error('Response was status code: ' + response.statusCode + ' (' + response.statusMessage + ')'));
-            }
-
-            const parsedBody = JSON.parse(body);
-
-            callback(undefined, parsedBody);
-        });
-    }
-
-    public static requestClimateControlTurnOff(
-        regionCode: string,
-        locale: string,
-        customSessionId: string,
-        dcmId: string,
-        gdcUserId: string,
-        vin: string,
-        timeZone: string,
-        baseEndpoint: string,
-        callback: (err?: Error, response?) => void): void {
-        request.post({
-            url: Api.getBaseEndpoint(regionCode, baseEndpoint) + '/ACRemoteOffRequest.php',
-            form: {
-                'initial_app_strings': Api.INITIAL_APP_STRINGS,
-                'RegionCode': regionCode,
-                'lg': locale,
-                'custom_sessionid': customSessionId,
-                'DCMID': dcmId,
-                'UserId': gdcUserId,
-                'VIN': vin,
-                'tz': timeZone
-            }
-        },
-        (err, response, body) => {
-            if (err) {
-                return callback(err);
-            }
-
-            if (response.statusCode !== 200) {
-                return callback(new Error('Response was status code: ' + response.statusCode + ' (' + response.statusMessage + ')'));
-            }
-
-            const parsedBody = JSON.parse(body);
-
-            callback(undefined, parsedBody);
-        });
-    }
-
-    public static requestClimateControlTurnOffResult(
-        regionCode: string,
-        locale: string,
-        customSessionId: string,
-        dcmId: string,
-        vin: string,
-        timeZone: string,
-        resultKey: string,
-        baseEndpoint: string,
-        callback: (err?: Error, response?) => void): void {
-        request.post({
-            url: Api.getBaseEndpoint(regionCode, baseEndpoint) + '/ACRemoteOffResult.php',
-            form: {
-                'initial_app_strings': Api.INITIAL_APP_STRINGS,
-                'RegionCode': regionCode,
-                'lg': locale,
-                'custom_sessionid': customSessionId,
-                'DCMID': dcmId,
-                'VIN': vin,
-                'tz': timeZone,
-                'resultKey': resultKey
-            }
-        },
-        (err, response, body) => {
-            if (err) {
-                return callback(err);
-            }
-
-            if (response.statusCode !== 200) {
-                return callback(new Error('Response was status code: ' + response.statusCode + ' (' + response.statusMessage + ')'));
-            }
-
-            const parsedBody = JSON.parse(body);
-
-            callback(undefined, parsedBody);
-        });
-    }
-
-    public static requestChargingStart(
-        regionCode: string,
-        locale: string,
-        customSessionId: string,
-        dcmId: string,
-        gdcUserId: string,
-        vin: string,
-        timeZone: string,
-        baseEndpoint: string,
-        callback: (err?: Error, response?) => void): void {
-        request.post({
-            url: Api.getBaseEndpoint(regionCode, baseEndpoint) + '/BatteryRemoteChargingRequest.php',
-            form: {
-                'initial_app_strings': Api.INITIAL_APP_STRINGS,
-                'RegionCode': regionCode,
-                'lg': locale,
-                'custom_sessionid': customSessionId,
-                'DCMID': dcmId,
-                'UserId': gdcUserId,
-                'VIN': vin,
-                'tz': timeZone
-            }
-        },
-        (err, response, body) => {
-            if (err) {
-                return callback(err);
-            }
-
-            if (response.statusCode !== 200) {
-                return callback(new Error('Response was status code: ' + response.statusCode + ' (' + response.statusMessage + ')'));
-            }
-
-            const parsedBody = JSON.parse(body);
-
-            callback(undefined, parsedBody);
-        });
+            console.log((Date.now() - beforeTimestamp) + ' miliseconds taken');
+            console.log(response.text);
+            return JSON.parse(response.text);
+        } catch (error) {
+            throw error;
+        }
     }
 
     private static encryptPassword(password: string, passwordEncryptionKey: string) {

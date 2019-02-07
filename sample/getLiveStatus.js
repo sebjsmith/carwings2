@@ -3,28 +3,18 @@
 const carwings = require('../release');
 const secrets = require('./secrets.json');
 
-const client = new carwings.Client();
+const client = new carwings.Client({regionCode:secrets.regionCode});
 
-// Login using a user's Carwings (i.e. Nissan Connect) credentials...
-client.login(secrets.email, secrets.password, (err, vehicle) => {
-    if (err) {
-        console.error(err);
-
-        return err;
-    }
+(async function () {
+    // Login
+    const vehicle = await client.login(secrets.email, secrets.password);
 
     // Print the vehicle VIN
     console.log(vehicle);
 
-    // Request live status about the vehicle...
-    client.requestStatus(vehicle.vin, (err, statusResponse) => {
-        if (err) {
-            console.error(err);
+    const cachedStatusResponse = await client.requestStatus(vehicle.vin);
 
-            return err;
-        }
+    // Print the cached vehicle status
+    console.log(cachedStatusResponse);
+})();
 
-        // Print the live status
-        console.log(statusResponse);
-    });
-});

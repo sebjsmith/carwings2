@@ -11,311 +11,217 @@ export class Client {
     private _regionCode: string;
     private _timeZone: string;
     private _baseEndpoint: string;
+    private _api: Api;
 
-    constructor(options?: {regionCode?: string, locale?: string, baseEndpoint?: string}) {
+    constructor(options?: { regionCode?: string, locale?: string, baseEndpoint?: string }) {
         if (typeof options === 'undefined') {
             options = {};
         }
         this._regionCode = options.regionCode || 'NNA'; // Default to North America
         this._locale = options.locale || 'en-US';       // Default to English (US)
         this._baseEndpoint = options.baseEndpoint;      // Default to undefined
+
+        this._api = new Api();
     }
 
-    public login(userId: string, password: string, callback: (err?: Error, vehicle?: IVehicle) => void): void {
-        const that = this;
+    private sleep = m => new Promise(r => setTimeout(r, m));
 
-        this.connect(
-            (connectErr, passwordEncryptionKey) => {
-                if (connectErr) {
-                    return callback(connectErr);
-                }
-
-                Api.login(
-                    that._regionCode,
-                    that._locale,
-                    userId,
-                    password,
-                    passwordEncryptionKey,
-                    that._baseEndpoint,
-                    (err, response) => {
-                        if (err) {
-                            return callback(err);
-                        }
-
-                        that._customSessionId = Client.extractCustomSessionIdFromLoginResponse(response, that._regionCode);
-
-                        const customerInfo = Client.extractCustomerInfo(response);
-
-                        if (typeof customerInfo === 'undefined') {
-                            return callback(new Error('Login failed'));
-                        }
-
-                        that._timeZone = customerInfo.timeZone;
-
-                        const vehicleInfo = Client.extractVehicleInfo(response);
-
-                        that._dcmId = vehicleInfo.dcmId;
-                        that._gdcUserId = vehicleInfo.gdcUserId;
-
-                        callback(
-                            undefined,
-                            {
-                                vin: vehicleInfo.vin
-                        });
-                    });
-            });
-    }
-
-    public requestStatus(vin: string, callback: (err?: Error, status?) => void): void {
-        const that = this;
-
-        Api.requestStatus(
-            that._regionCode,
-            that._locale,
-            that._customSessionId,
-            that._dcmId,
-            that._gdcUserId,
-            vin,
-            that._timeZone,
-            that._baseEndpoint,
-            (err, response) => {
-                if (err) {
-                    return callback(err);
-                }
-
-                const resultKey = response.resultKey;
-
-                if (!resultKey) {
-                    return callback(new Error('Response did not include response key.'));
-                }
-
-                const onTimer = () => {
-                    Api.requestStatusResult(
-                        that._regionCode,
-                        that._locale,
-                        that._customSessionId,
-                        that._dcmId,
-                        vin,
-                        that._timeZone,
-                        resultKey,
-                        that._baseEndpoint,
-                        (resultErr, resultResponse) => {
-                            if (resultErr) {
-                                return callback(resultErr);
-                            }
-
-                            const responseFlag = resultResponse.responseFlag;
-
-                            if (!responseFlag) {
-                                return callback(new Error('Response did not include response flag.'));
-                            }
-
-                            if (responseFlag === '0') {
-                                setTimeout(onTimer, Client.RESULT_POLLING_INTERVAL);
-                            }
-                            else {
-                                callback(undefined, resultResponse);
-                            }
-                        });
-                };
-
-                setTimeout(onTimer, Client.RESULT_POLLING_INTERVAL);
-            });
-    }
-
-    public getCachedStatus(vin: string, callback: (err?: Error, status?) => void): void {
-        const that = this;
-
-        Api.requestCachedStatus(
-            that._regionCode,
-            that._locale,
-            that._customSessionId,
-            that._dcmId,
-            that._gdcUserId,
-            vin,
-            that._timeZone,
-            that._baseEndpoint,
-            (err, response) => {
-                if (err) {
-                    return callback(err);
-                }
-
-                callback(undefined, response);
-            });
-    }
-
-    public getClimateControlStatus(vin: string, callback: (err?: Error, status?) => void): void {
-        const that = this;
-
-        Api.requestClimateControlStatus(
-            that._regionCode,
-            that._locale,
-            that._customSessionId,
-            that._dcmId,
-            that._gdcUserId,
-            vin,
-            that._timeZone,
-            that._baseEndpoint,
-            (err, response) => {
-                if (err) {
-                    return callback(err);
-                }
-                callback(undefined, response);
-            });
-    }
-
-    public requestClimateControlTurnOn(vin: string, callback: (err?: Error, status?) => void): void {
-        const that = this;
-
-        Api.requestClimateControlTurnOn(
-            that._regionCode,
-            that._locale,
-            that._customSessionId,
-            that._dcmId,
-            that._gdcUserId,
-            vin,
-            that._timeZone,
-            that._baseEndpoint,
-            (err, response) => {
-                if (err) {
-                    return callback(err);
-                }
-
-                const resultKey = response.resultKey;
-
-                if (!resultKey) {
-                    return callback(new Error('Response did not include response key.'));
-                }
-
-                const onTimer = () => {
-                    Api.requestClimateControlTurnOnResult(
-                        that._regionCode,
-                        that._locale,
-                        that._customSessionId,
-                        that._dcmId,
-                        vin,
-                        that._timeZone,
-                        resultKey,
-                        that._baseEndpoint,
-                        (resultErr, resultResponse) => {
-                            if (resultErr) {
-                                return callback(resultErr);
-                            }
-
-                            const responseFlag = resultResponse.responseFlag;
-
-                            if (!responseFlag) {
-                                return callback(new Error('Response did not include response flag.'));
-                            }
-
-                            if (responseFlag === '0') {
-                                setTimeout(onTimer, Client.RESULT_POLLING_INTERVAL);
-                            }
-                            else {
-                                callback(undefined, resultResponse);
-                            }
-                        });
-                };
-
-                setTimeout(onTimer, Client.RESULT_POLLING_INTERVAL);
-            });
-    }
-
-    public requestClimateControlTurnOff(vin: string, callback: (err?: Error, status?) => void): void {
-        const that = this;
-
-        Api.requestClimateControlTurnOff(
-            that._regionCode,
-            that._locale,
-            that._customSessionId,
-            that._dcmId,
-            that._gdcUserId,
-            vin,
-            that._timeZone,
-            that._baseEndpoint,
-            (err, response) => {
-                if (err) {
-                    return callback(err);
-                }
-
-                const resultKey = response.resultKey;
-
-                if (!resultKey) {
-                    return callback(new Error('Response did not include response key.'));
-                }
-
-                const onTimer = () => {
-                    Api.requestClimateControlTurnOffResult(
-                        that._regionCode,
-                        that._locale,
-                        that._customSessionId,
-                        that._dcmId,
-                        vin,
-                        that._timeZone,
-                        resultKey,
-                        that._baseEndpoint,
-                        (resultErr, resultResponse) => {
-                            if (resultErr) {
-                                return callback(resultErr);
-                            }
-
-                            const responseFlag = resultResponse.responseFlag;
-
-                            if (!responseFlag) {
-                                return callback(new Error('Response did not include response flag.'));
-                            }
-
-                            if (responseFlag === '0') {
-                                setTimeout(onTimer, Client.RESULT_POLLING_INTERVAL);
-                            }
-                            else {
-                                callback(undefined, resultResponse);
-                            }
-                        });
-                };
-
-                setTimeout(onTimer, Client.RESULT_POLLING_INTERVAL);
-            });
-    }
-
-    public requestChargingStart(vin: string, callback: (err?: Error, status?) => void): void {
-        const that = this;
-
-        Api.requestChargingStart(
-            that._regionCode,
-            that._locale,
-            that._customSessionId,
-            that._dcmId,
-            that._gdcUserId,
-            vin,
-            that._timeZone,
-            that._baseEndpoint,
-            (err, response) => {
-                if (err) {
-                    return callback(err);
-                }
-                callback(undefined, response);
-            });
-    }
-
-    private connect(callback: (err?: Error, passwordEncryptionKey?: string) => void): void {
-        Api.connect(
+    public async login(userId: string, password: string): Promise<IVehicle> {
+        const connectResponse = await this._api.connectAsync(
             this._regionCode,
             this._locale,
-            this._baseEndpoint,
-            (err, response) => {
-                if (err) {
-                    return callback(err);
-                }
+            this._baseEndpoint);
+        {
+            const passwordEncryptionKey = connectResponse.baseprm;
 
-                const passwordEncryptionKey = response.baseprm;
+            if (!passwordEncryptionKey) {
+                console.log(connectResponse);
+                throw new Error('Response did not include password encryption key.');
+            }
 
-                if (!passwordEncryptionKey) {
-                    return callback(new Error('Response did not include password encryption key.'));
-                }
+            const loginResponse = await this._api.loginAsync(
+                this._regionCode,
+                this._locale,
+                userId,
+                password,
+                passwordEncryptionKey,
+                this._baseEndpoint);
 
-                return callback(undefined, passwordEncryptionKey);
-            });
+            this._customSessionId = Client.extractCustomSessionIdFromLoginResponse(loginResponse, this._regionCode);
+
+            const customerInfo = Client.extractCustomerInfo(loginResponse);
+
+            if (typeof customerInfo === 'undefined') {
+                throw new Error('Login failed');
+            }
+
+            this._timeZone = customerInfo.timeZone;
+
+            const vehicleInfo = Client.extractVehicleInfo(loginResponse);
+
+            this._dcmId = vehicleInfo.dcmId;
+            this._gdcUserId = vehicleInfo.gdcUserId;
+
+            return {
+                vin: vehicleInfo.vin
+            };
+        }
+    }
+
+    public async requestStatus(vin: string) {
+        const requestStatusResponse = await this._api.requestStatusAsync(
+            this._regionCode,
+            this._locale,
+            this._customSessionId,
+            this._dcmId,
+            this._gdcUserId,
+            vin,
+            this._timeZone,
+            this._baseEndpoint);
+
+        const resultKey = requestStatusResponse.resultKey;
+
+        if (!resultKey) {
+            throw new Error('Response did not include response key.');
+        }
+
+        while (true) {
+            const requestStatusResultResponse = await this._api.requestStatusResultAsync(
+                this._regionCode,
+                this._locale,
+                this._customSessionId,
+                this._dcmId,
+                vin,
+                this._timeZone,
+                resultKey,
+                this._baseEndpoint);
+            const responseFlag = requestStatusResultResponse.responseFlag;
+
+            if (!responseFlag) {
+                throw new Error('Response did not include response flag.');
+            }
+
+            if (responseFlag !== '0') {
+                return requestStatusResultResponse;
+            }
+
+            this.sleep(Client.RESULT_POLLING_INTERVAL);
+        }
+    }
+
+    public async getCachedStatus(vin: string) {
+        return await this._api.requestCachedStatusAsync(
+            this._regionCode,
+            this._locale,
+            this._customSessionId,
+            this._dcmId,
+            this._gdcUserId,
+            vin,
+            this._timeZone,
+            this._baseEndpoint);
+    }
+
+    public async getClimateControlStatus(vin: string) {
+        return await this._api.requestClimateControlStatusAsync(
+            this._regionCode,
+            this._locale,
+            this._customSessionId,
+            this._dcmId,
+            this._gdcUserId,
+            vin,
+            this._timeZone,
+            this._baseEndpoint);
+    }
+
+    public async requestClimateControlTurnOn(vin: string) {
+        const requestClimateControlTurnOnResponse = await this._api.requestClimateControlTurnOnAsync(
+            this._regionCode,
+            this._locale,
+            this._customSessionId,
+            this._dcmId,
+            this._gdcUserId,
+            vin,
+            this._timeZone,
+            this._baseEndpoint);
+
+        const resultKey = requestClimateControlTurnOnResponse.resultKey;
+
+        if (!resultKey) {
+            throw new Error('Response did not include response key.');
+        }
+        while (true) {
+            const requestClimateControlTurnOnResultResponse = await this._api.requestClimateControlTurnOnResultAsync(
+                this._regionCode,
+                this._locale,
+                this._customSessionId,
+                this._dcmId,
+                vin,
+                this._timeZone,
+                resultKey,
+                this._baseEndpoint);
+
+            const responseFlag = requestClimateControlTurnOnResultResponse.responseFlag;
+
+            if (!responseFlag) {
+                throw new Error('Response did not include response flag.');
+            }
+
+            if (responseFlag !== '0') {
+                return requestClimateControlTurnOnResultResponse;
+            }
+            this.sleep(Client.RESULT_POLLING_INTERVAL);
+        }
+    }
+
+    public async requestClimateControlTurnOff(vin: string) {
+        const requestClimateControlTurnOffResponse = await this._api.requestClimateControlTurnOffAsync(
+            this._regionCode,
+            this._locale,
+            this._customSessionId,
+            this._dcmId,
+            this._gdcUserId,
+            vin,
+            this._timeZone,
+            this._baseEndpoint);
+        const resultKey = requestClimateControlTurnOffResponse.resultKey;
+
+        if (!resultKey) {
+            throw new Error('Response did not include response key.');
+        }
+        while (true) {
+            const requestClimateControlTurnOffResultResponse = await this._api.requestClimateControlTurnOffResultAsync(
+                this._regionCode,
+                this._locale,
+                this._customSessionId,
+                this._dcmId,
+                vin,
+                this._timeZone,
+                resultKey,
+                this._baseEndpoint);
+
+            const responseFlag = requestClimateControlTurnOffResultResponse.responseFlag;
+
+            if (!responseFlag) {
+                return new Error('Response did not include response flag.');
+            }
+
+            if (responseFlag !== '0') {
+                return requestClimateControlTurnOffResultResponse;
+            }
+            this.sleep(Client.RESULT_POLLING_INTERVAL);
+        }
+    }
+
+    public async requestChargingStart(vin: string) {
+        return await this._api.requestChargingStartAsync(
+            this._regionCode,
+            this._locale,
+            this._customSessionId,
+            this._dcmId,
+            this._gdcUserId,
+            vin,
+            this._timeZone,
+            this._baseEndpoint);
     }
 
     private static extractCustomSessionIdFromLoginResponse(response, regionCode): string {
@@ -364,7 +270,7 @@ export class Client {
 
     private static extractCustomerInfo(response): {
         timeZone: string
-    }{
+    } {
         const customerInfo = response.CustomerInfo;
 
         if (!customerInfo) {
@@ -388,7 +294,7 @@ export class Client {
         gdcUserId: string,
         dcmId: string,
         vin: string
-    }{
+    } {
         const vehicle = response.vehicle;
 
         if (!vehicle) {

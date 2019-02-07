@@ -3,22 +3,18 @@
 const carwings = require('../release');
 const secrets = require('./secrets.json');
 
-const client = new carwings.Client();
+const client = new carwings.Client({regionCode:secrets.regionCode});
 
-client.login(secrets.email, secrets.password, (err, vehicle) => {
-    if (err) {
-        console.error(err);
-        
-        return err;
-    }
-    
-    client.requestStatus(vehicle.vin, (statusErr, statusResponse) => {
-        if (statusErr) {
-            console.error(statusErr);
-            
-            return statusErr;
-        }
-        
-        console.log(statusResponse);
-    });
-});
+// Login
+(async function () {
+    // Login
+    const vehicle = await client.login(secrets.email, secrets.password);
+
+    // Print the vehicle VIN
+    console.log(vehicle);
+
+    const cachedStatusResponse = await client.requestStatus(vehicle.vin);
+
+    // Print the cached vehicle status
+    console.log(cachedStatusResponse);
+})();
