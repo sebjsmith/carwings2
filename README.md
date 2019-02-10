@@ -1,110 +1,13 @@
+# cw2sjs
+A fork of Phillip Hoff's carwings2 library with:
+
+*Async-await replacement of callbacks including ability to fire and forget requests.
+*More utilisation of TypeScript typing including not exposing raw responses to user.
+
 # carwings2
 A Node.js client library for the Nissan Leaf "Carwings" API.
 
 This library makes use of version "2" of the Carwings API.
-
-## Installation
-
-```bash
-> npm install carwings2 --save
-```
-
-## Use
-
-```javascript
-var carwings = require('carwings2');
-
-var secrets = {
-    email: <email>,
-    password: <password>
-};
-
-// Create an instance of the client...
-var client = new carwings.Client();
-
-// Login using a user's Carwings (i.e. Nissan Connect) credentials...
-client.login(secrets.email, secrets.password, (err, vehicle) => {
-    if (err) {
-        console.error(err);
-        
-        return err;
-    }
-    
-    //
-    // Logging in returns information about the user's vehicle, including its VIN.
-    //
-    
-    // Request status about the user's vehicle...
-    client.requestStatus(vehicle.vin, (statusErr, statusResponse) => {
-        if (statusErr) {
-            console.error(statusErr);
-            
-            return statusErr;
-        }
-        
-        //
-        // The response contains (raw) properties related to the status of the vehicle (e.g. charging or not).
-        //
-        
-        console.log(statusResponse);
-    });
-});
-
-```
-
-## API
-
-### Client
-
-> Client(options)
- - `options` *(object, optional)*: An options object you can use to configure the client's settings.
-
-You can set the following fields on the options parameter:
- - `regionCode` *(string, optional)*: The region in which the user resides. Defaults to `'NNA'` (United States). Use 'NE' to connect to the European endpoint.
- - `locale` *(string, optional)*: The locale (language) of the user. Defaults to `'en-US'` (English (United States)).
- - `baseEndpoint` *(string, optional)*: The API endpoint to connect to. If `baseEndpoint` isn't specified the default API endpoint for the specified `regionCode` will be used.
- 
-> login(email, password, callback)
-
- - `email` *(string)*: The email address associated with the user's Carwings account.
- - `password` *(string)*: The password associated with the user's Carwings account.
- - `callback` *(function)*: Invoked on completion of the request.
- 
-> requestStatus(vin, callback)
-
- - `vin` *(string)*: The VIN of the user's vehicle (e.g. provided to the `login()` callback).
- - `callback` *(function)*: Invoked on completion of the request.
-
-Note: This call can take upwards of several minutes to complete.
-
-> getCachedStatus(vin, callback)
-
- - `vin` *(string)*: The VIN of the user's vehicle (e.g. provided to the `login()` callback).
- - `callback` *(function)*: Invoked on completion of the request.
-
-> getClimateControlStatus(vin, callback)
-
- - `vin` *(string)*: The VIN of the user's vehicle (e.g. provided to the `login()` callback).
- - `callback` *(function)*: Invoked on completion of the request.
-
-> requestClimateControlTurnOn(vin, callback)
-
- - `vin` *(string)*: The VIN of the user's vehicle (e.g. provided to the `login()` callback).
- - `callback` *(function)*: Invoked on completion of the request.
-
-> requestClimateControlTurnOff(vin, callback)
-
- - `vin` *(string)*: The VIN of the user's vehicle (e.g. provided to the `login()` callback).
- - `callback` *(function)*: Invoked on completion of the request.
-
-> requestChargingStart(vin, callback)
-
- - `vin` *(string)*: The VIN of the user's vehicle (e.g. provided to the `login()` callback).
- - `callback` *(function)*: Invoked on completion of the request.
-
-## Acknowledgements
-
-This library was inspired by [Jason Horne's](https://github.com/jdhorne) [`pywings2`](https://github.com/jdhorne/pycarwings2) Carwings library for Python.
 
 ## License
 
