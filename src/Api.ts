@@ -244,8 +244,6 @@ export class Api {
     private async postForm(url: string, form: object) {
         try {
             const beforeTimestamp = Date.now();
-            console.log(url);
-            console.log(form);
             const response = await superagent
                 .post(url)
                 .type('form')
@@ -254,9 +252,12 @@ export class Api {
             if (response.status !== 200) {
                 throw new Error('Response was status code: ' + response.status + ' (' + response.text + ')');
             }
-            console.log((Date.now() - beforeTimestamp) + ' miliseconds taken');
-            console.log(response.text);
-            return JSON.parse(response.text);
+            console.log(url + ' - ' + (Date.now() - beforeTimestamp) + ' miliseconds taken');
+            const responseBody = JSON.parse(response.text);
+            if (responseBody.status !== 200) {
+                throw new Error('Response body had status code: ' + responseBody.status + ' (' + response.text + ')');
+            }
+            return responseBody;
         } catch (error) {
             throw error;
         }
