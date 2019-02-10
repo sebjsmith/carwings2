@@ -5,16 +5,29 @@ const secrets = require('./secrets.json');
 
 const client = new carwings.Client({regionCode:secrets.regionCode});
 
-// Login
 (async function () {
-    // Login
     const vehicle = await client.login(secrets.email, secrets.password);
-
-    // Print the vehicle VIN
     console.log(vehicle);
 
-    const cachedStatusResponse = await client.requestStatus(vehicle.vin);
+    // Charging
+    await client.startCharging(vehicle.vin);
 
-    // Print the cached vehicle status
-    console.log(cachedStatusResponse);
+    const getCachedChargingStatusResponse = await client.getCachedChargingStatus(vehicle.vin);
+    console.log(getCachedChargingStatusResponse);
+
+    const getCurrentChargingStatusResponse = await (await client.getCurrentChargingStatus(vehicle.vin))
+                                                    .waitForResult();
+    console.log(getCurrentChargingStatusResponse);
+
+    // Climate Control
+    const getCachedRemoteClimateControlStatusResponse = await client.getCachedRemoteClimateControlStatus(vehicle.vin);
+    console.log(getCachedRemoteClimateControlStatusResponse);
+
+    const startRemoteClimateControlResponse = await (await client.startRemoteClimateControl(vehicle.vin))
+                                                    .waitForResult();
+    console.log(startRemoteClimateControlResponse);
+
+    const stopRemoteClimateControlResponse = await (await client.stopRemoteClimateControl(vehicle.vin))
+                                                    .waitForResult();
+    console.log(stopRemoteClimateControlResponse);
 })();
