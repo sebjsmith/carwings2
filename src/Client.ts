@@ -1,5 +1,13 @@
 import { Api } from './Api';
+
 import { IVehicle } from './IVehicle';
+import { ClientOptions } from './ClientOptions';
+import { IChargingStatus } from './IChargingStatus';
+import { ClimateControlStatus } from './ClimateControlStatus';
+import { ChargingStatus } from './ChargingStatus';
+import { IOperationResult } from './IOperationResult';
+
+import * as moment from 'moment';
 
 export class Client {
     private static RESULT_POLLING_INTERVAL = 20000;
@@ -13,7 +21,7 @@ export class Client {
     private _baseEndpoint: string;
     private _api: Api;
 
-    constructor(options?: { regionCode?: string, locale?: string, baseEndpoint?: string }) {
+    constructor(options?: ClientOptions) {
         if (typeof options === 'undefined') {
             options = {};
         }
@@ -24,10 +32,10 @@ export class Client {
         this._api = new Api();
     }
 
-    private sleep = m => new Promise(r => setTimeout(r, m));
+    private sleep = (m: number) => new Promise(r => setTimeout(r, m));
 
     public async login(userId: string, password: string): Promise<IVehicle> {
-        const connectResponse = await this._api.connectAsync(
+        const connectResponse = await this._api.InitialApp(
             this._regionCode,
             this._locale,
             this._baseEndpoint);
@@ -39,7 +47,7 @@ export class Client {
                 throw new Error('Response did not include password encryption key.');
             }
 
-            const loginResponse = await this._api.loginAsync(
+            const loginResponse = await this._api.UserLoginRequest(
                 this._regionCode,
                 this._locale,
                 userId,
@@ -68,8 +76,8 @@ export class Client {
         }
     }
 
-    public async requestStatus(vin: string) {
-        const requestStatusResponse = await this._api.requestStatusAsync(
+    public async getCurrentChargingStatus(vin: string): Promise<IOperationResult<IChargingStatus>> {
+        const requestStatusResponse = await this._api.BatteryStatusCheckRequest(
             this._regionCode,
             this._locale,
             this._customSessionId,
@@ -85,56 +93,94 @@ export class Client {
             throw new Error('Response did not include response key.');
         }
 
-        while (true) {
-            const requestStatusResultResponse = await this._api.requestStatusResultAsync(
-                this._regionCode,
-                this._locale,
-                this._customSessionId,
-                this._dcmId,
-                vin,
-                this._timeZone,
-                resultKey,
-                this._baseEndpoint);
-            const responseFlag = requestStatusResultResponse.responseFlag;
+        const that = this;
+        return {
+            waitForResult: async function () {
+                while (true) {
+                    const requestStatusResultResponse = await that._api.BatteryStatusCheckResultRequest(
+                        that._regionCode,
+                        that._locale,
+                        that._customSessionId,
+                        that._dcmId,
+                        vin,
+                        that._timeZone,
+                        resultKey,
+                        that._baseEndpoint);
+                    const responseFlag = requestStatusResultResponse.responseFlag;
 
-            if (!responseFlag) {
-                throw new Error('Response did not include response flag.');
+                    if (!responseFlag) {
+                        throw new Error('Response did not include response flag.');
+                    }
+
+                    const batteryLevel = parseInt(requestStatusResultResponse.batteryDegradation, 10);
+                    const batteryCapacity = parseInt(requestStatusResultResponse.batteryCapacity, 10);
+                    const percentageCharged = Math.round(batteryLevel * 100 / batteryCapacity);
+
+                    if (responseFlag !== '0') {
+                        return {
+                            chargingStatus: requestStatusResultResponse.charging === 'NO' ? ChargingStatus.off : ChargingStatus.on,
+                            percentageCharged: percentageCharged,
+                            timestamp: new Date()
+                        };
+                    }
+
+                    that.sleep(Client.RESULT_POLLING_INTERVAL);
+                }
             }
+        };
+    }
 
-            if (responseFlag !== '0') {
-                return requestStatusResultResponse;
-            }
+    public async startCharging(vin: string): Promise<void> {
+        return await this._api.BatteryRemoteChargingRequest(
+            this._regionCode,
+            this._locale,
+            this._customSessionId,
+            this._dcmId,
+            this._gdcUserId,
+            vin,
+            this._timeZone,
+            this._baseEndpoint);
+    }
 
-            this.sleep(Client.RESULT_POLLING_INTERVAL);
+    public async getCachedChargingStatus(vin: string): Promise<IChargingStatus> {
+        const response = await this._api.BatteryStatusRecordsRequest(
+            this._regionCode,
+            this._locale,
+            this._customSessionId,
+            this._dcmId,
+            this._gdcUserId,
+            vin,
+            this._timeZone,
+            this._baseEndpoint);
+
+        let timestamp = moment(response.BatteryStatusRecords.NotificationDateAndTime, 'YYYY/MM/DD hh:mm', false).toDate();
+
+        return {
+            percentageCharged: parseInt(response.BatteryStatusRecords.BatteryStatus.SOC.Value, 10),
+            chargingStatus: response.BatteryStatusRecords.BatteryChargingStatus === 'NOT_CHARGING' ? ChargingStatus.off : ChargingStatus.on,
+            timestamp: timestamp
+        };
+    }
+
+    public async getCachedRemoteClimateControlStatus(vin: string): Promise<ClimateControlStatus> {
+        const response = await this._api.RemoteACRecordsRequest(
+            this._regionCode,
+            this._locale,
+            this._customSessionId,
+            this._dcmId,
+            this._gdcUserId,
+            vin,
+            this._timeZone,
+            this._baseEndpoint);
+
+        if (response.RemoteACRecords.RemoteACOperation === 'START') {
+            return ClimateControlStatus.on;
         }
+        return ClimateControlStatus.off;
     }
 
-    public async getCachedStatus(vin: string) {
-        return await this._api.requestCachedStatusAsync(
-            this._regionCode,
-            this._locale,
-            this._customSessionId,
-            this._dcmId,
-            this._gdcUserId,
-            vin,
-            this._timeZone,
-            this._baseEndpoint);
-    }
-
-    public async getClimateControlStatus(vin: string) {
-        return await this._api.requestClimateControlStatusAsync(
-            this._regionCode,
-            this._locale,
-            this._customSessionId,
-            this._dcmId,
-            this._gdcUserId,
-            vin,
-            this._timeZone,
-            this._baseEndpoint);
-    }
-
-    public async requestClimateControlTurnOn(vin: string) {
-        const requestClimateControlTurnOnResponse = await this._api.requestClimateControlTurnOnAsync(
+    public async startRemoteClimateControl(vin: string): Promise<IOperationResult<void>> {
+        const requestClimateControlTurnOnResponse = await this._api.ACRemoteRequest(
             this._regionCode,
             this._locale,
             this._customSessionId,
@@ -145,36 +191,44 @@ export class Client {
             this._baseEndpoint);
 
         const resultKey = requestClimateControlTurnOnResponse.resultKey;
-
         if (!resultKey) {
             throw new Error('Response did not include response key.');
         }
-        while (true) {
-            const requestClimateControlTurnOnResultResponse = await this._api.requestClimateControlTurnOnResultAsync(
-                this._regionCode,
-                this._locale,
-                this._customSessionId,
-                this._dcmId,
-                vin,
-                this._timeZone,
-                resultKey,
-                this._baseEndpoint);
 
-            const responseFlag = requestClimateControlTurnOnResultResponse.responseFlag;
+        const that = this;
+        return {
+            waitForResult: async function () {
+                while (true) {
+                    const requestClimateControlTurnOnResultResponse = await that._api.ACRemoteResult(
+                        that._regionCode,
+                        that._locale,
+                        that._customSessionId,
+                        that._dcmId,
+                        vin,
+                        that._timeZone,
+                        resultKey,
+                        that._baseEndpoint);
 
-            if (!responseFlag) {
-                throw new Error('Response did not include response flag.');
+                    const responseFlag = requestClimateControlTurnOnResultResponse.responseFlag;
+
+                    if (!responseFlag) {
+                        throw new Error('Response did not include response flag.');
+                    }
+
+                    if (responseFlag !== '0') {
+                        if (requestClimateControlTurnOnResponse.hvacStatus === '0') {
+                            throw new Error('Battery too low to start climate control');
+                        }
+                        return;
+                    }
+                    that.sleep(Client.RESULT_POLLING_INTERVAL);
+                }
             }
-
-            if (responseFlag !== '0') {
-                return requestClimateControlTurnOnResultResponse;
-            }
-            this.sleep(Client.RESULT_POLLING_INTERVAL);
-        }
+        };
     }
 
-    public async requestClimateControlTurnOff(vin: string) {
-        const requestClimateControlTurnOffResponse = await this._api.requestClimateControlTurnOffAsync(
+    public async stopRemoteClimateControl(vin: string): Promise<IOperationResult<void>> {
+        const requestClimateControlTurnOffResponse = await this._api.ACRemoteOffRequest(
             this._regionCode,
             this._locale,
             this._customSessionId,
@@ -188,40 +242,33 @@ export class Client {
         if (!resultKey) {
             throw new Error('Response did not include response key.');
         }
-        while (true) {
-            const requestClimateControlTurnOffResultResponse = await this._api.requestClimateControlTurnOffResultAsync(
-                this._regionCode,
-                this._locale,
-                this._customSessionId,
-                this._dcmId,
-                vin,
-                this._timeZone,
-                resultKey,
-                this._baseEndpoint);
+        const that = this;
+        return {
+            waitForResult: async function () {
+                while (true) {
+                    const requestClimateControlTurnOnResultResponse = await that._api.ACRemoteOffResult(
+                        that._regionCode,
+                        that._locale,
+                        that._customSessionId,
+                        that._dcmId,
+                        vin,
+                        that._timeZone,
+                        resultKey,
+                        that._baseEndpoint);
 
-            const responseFlag = requestClimateControlTurnOffResultResponse.responseFlag;
+                    const responseFlag = requestClimateControlTurnOnResultResponse.responseFlag;
 
-            if (!responseFlag) {
-                return new Error('Response did not include response flag.');
+                    if (!responseFlag) {
+                        throw new Error('Response did not include response flag.');
+                    }
+
+                    if (responseFlag !== '0') {
+                        return requestClimateControlTurnOnResultResponse;
+                    }
+                    that.sleep(Client.RESULT_POLLING_INTERVAL);
+                }
             }
-
-            if (responseFlag !== '0') {
-                return requestClimateControlTurnOffResultResponse;
-            }
-            this.sleep(Client.RESULT_POLLING_INTERVAL);
-        }
-    }
-
-    public async requestChargingStart(vin: string) {
-        return await this._api.requestChargingStartAsync(
-            this._regionCode,
-            this._locale,
-            this._customSessionId,
-            this._dcmId,
-            this._gdcUserId,
-            vin,
-            this._timeZone,
-            this._baseEndpoint);
+        };
     }
 
     private static extractCustomSessionIdFromLoginResponse(response, regionCode): string {

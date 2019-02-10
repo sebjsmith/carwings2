@@ -1,19 +1,19 @@
 {
-  "name": "carwings2",
-  "version": "4.0.0",
-  "description": "A Node.js client library for the Nissan Leaf \"Carwings\" API",
+  "name": "cw2sjs",
+  "version": "0.0.1",
+  "description": "Another Node.js client library for the Nissan Leaf \"Carwings\" API",
   "main": "release/Index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/philliphoff/carwings2.git"
+    "url": "git+https://github.com/sebjsmith/cw2sjs.git"
   },
-  "author": "Phillip Hoff",
+  "author": "Sebastian James Smith",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/philliphoff/carwings2/issues"
+    "url": "https://github.com/sebjsmith/cw2sjs/issues"
   },
   "homepage": "https://github.com/philliphoff/carwings2#readme",
   "devDependencies": {
@@ -29,6 +29,7 @@
     "typescript": "^3.1.6"
   },
   "dependencies": {
+    "moment": "^2.24.0",
     "superagent": "^4.1.0"
   }
 }
