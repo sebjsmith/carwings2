@@ -1,6 +1,6 @@
 {
   "name": "cw2sjs",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Another Node.js client library for the Nissan Leaf \"Carwings\" API",
   "main": "release/Index.js",
   "scripts": {
@@ -31,5 +31,9 @@
   "dependencies": {
     "moment": "^2.24.0",
     "superagent": "^4.1.0"
-  }
+  },
+  "keywords": [
+    "leaf",
+    "nissan"
+  ]
 }
