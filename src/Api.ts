@@ -14,7 +14,7 @@ export class Api {
         }
     }
 
-    public async connectAsync(
+    public async InitialApp(
         regionCode: string,
         locale: string,
         baseEndpoint: string) {
@@ -26,7 +26,7 @@ export class Api {
             });
     }
 
-    public async loginAsync(
+    public async UserLoginRequest(
         regionCode: string,
         locale: string,
         userId: string,
@@ -46,7 +46,7 @@ export class Api {
             });
     }
 
-    public async requestStatusAsync(
+    public async BatteryStatusCheckRequest(
         regionCode: string,
         locale: string,
         customSessionId: string,
@@ -68,7 +68,7 @@ export class Api {
             });
     }
 
-    public async requestStatusResultAsync(
+    public async BatteryStatusCheckResultRequest(
         regionCode: string,
         locale: string,
         customSessionId: string,
@@ -89,7 +89,7 @@ export class Api {
         });
     }
 
-    public async requestCachedStatusAsync(
+    public async BatteryStatusRecordsRequest(
         regionCode: string,
         locale: string,
         customSessionId: string,
@@ -111,7 +111,7 @@ export class Api {
             });
     }
 
-    public async requestClimateControlStatusAsync(
+    public async RemoteACRecordsRequest(
         regionCode: string,
         locale: string,
         customSessionId: string,
@@ -132,7 +132,7 @@ export class Api {
         });
     }
 
-    public async requestClimateControlTurnOnAsync(
+    public async ACRemoteRequest(
         regionCode: string,
         locale: string,
         customSessionId: string,
@@ -154,7 +154,7 @@ export class Api {
             });
     }
 
-    public async requestClimateControlTurnOnResultAsync(
+    public async ACRemoteResult(
         regionCode: string,
         locale: string,
         customSessionId: string,
@@ -175,7 +175,7 @@ export class Api {
         });
     }
 
-    public async requestClimateControlTurnOffAsync(
+    public async ACRemoteOffRequest(
         regionCode: string,
         locale: string,
         customSessionId: string,
@@ -197,7 +197,7 @@ export class Api {
             });
     }
 
-    public async requestClimateControlTurnOffResultAsync(
+    public async ACRemoteOffResult(
         regionCode: string,
         locale: string,
         customSessionId: string,
@@ -219,7 +219,7 @@ export class Api {
             });
     }
 
-    public async requestChargingStartAsync(
+    public async BatteryRemoteChargingRequest(
         regionCode: string,
         locale: string,
         customSessionId: string,
