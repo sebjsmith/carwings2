@@ -9,6 +9,10 @@ A Node.js client library for the Nissan Leaf "Carwings" API.
 
 This library makes use of version "2" of the Carwings API.
 
+# Fixes for API changes made on September 2019
+
+Credit to Tobias Westergaard Kjeldsen for new API details. See https://gitlab.com/tobiaswkjeldsen/dartcarwings/issues/15
+
 ## License
 
 MIT

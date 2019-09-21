@@ -1,6 +1,6 @@
 {
   "name": "cw2sjs",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Another Node.js client library for the Nissan Leaf \"Carwings\" API",
   "main": "release/Index.js",
   "scripts": {
@@ -15,7 +15,7 @@
   "bugs": {
     "url": "https://github.com/sebjsmith/cw2sjs/issues"
   },
-  "homepage": "https://github.com/philliphoff/carwings2#readme",
+  "homepage": "https://github.com/sebjsmith/cw2sjs#readme",
   "devDependencies": {
     "@types/superagent": "^3.8.6",
     "babel-core": "^6.26.3",

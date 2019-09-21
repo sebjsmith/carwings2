@@ -3,8 +3,8 @@ import * as superagent from 'superagent';
 
 export class Api {
     private static NNA_BASE_ENDPOINT = 'https://gdcportalgw.its-mo.com/gworchest_160803EC/gdc';
-    private static NE_BASE_ENDPOINT = 'https://gdcportalgw.its-mo.com/api_v181217_NE/gdc';
-    private static INITIAL_APP_STRINGS = 'geORNtsZe5I4lRGjG9GZiA';
+    private static NE_BASE_ENDPOINT = 'https://gdcportalgw.its-mo.com/api_v190426_NE/gdc';
+    private static INITIAL_APP_STR = '9s5rfKVuMrT03RtzajWNcA';
 
     private static getBaseEndpoint(regionCode: string, baseEndpoint?: string) {
         if (baseEndpoint) {
@@ -18,9 +18,9 @@ export class Api {
         regionCode: string,
         locale: string,
         baseEndpoint: string) {
-        return await this.postForm(Api.getBaseEndpoint(regionCode, baseEndpoint) + '/InitialApp.php',
+        return await this.postForm(Api.getBaseEndpoint(regionCode, baseEndpoint) + '/InitialApp_v2.php',
             {
-                'initial_app_strings': Api.INITIAL_APP_STRINGS,
+                'initial_app_str': Api.INITIAL_APP_STR,
                 'RegionCode': regionCode,
                 'lg': locale
             });
@@ -38,7 +38,7 @@ export class Api {
 
         return await this.postForm(Api.getBaseEndpoint(regionCode, baseEndpoint) + '/UserLoginRequest.php',
             {
-                'initial_app_strings': Api.INITIAL_APP_STRINGS,
+                'initial_app_str': Api.INITIAL_APP_STR,
                 'RegionCode': regionCode,
                 'lg': locale,
                 'UserId': userId,
@@ -57,7 +57,7 @@ export class Api {
         baseEndpoint: string) {
         return await this.postForm(Api.getBaseEndpoint(regionCode, baseEndpoint) + '/BatteryStatusCheckRequest.php',
             {
-                'initial_app_strings': Api.INITIAL_APP_STRINGS,
+                'initial_app_str': Api.INITIAL_APP_STR,
                 'RegionCode': regionCode,
                 'lg': locale,
                 'custom_sessionid': customSessionId,
@@ -78,7 +78,7 @@ export class Api {
         resultKey: string,
         baseEndpoint: string) {
         return await this.postForm(Api.getBaseEndpoint(regionCode, baseEndpoint) + '/BatteryStatusCheckResultRequest.php', {
-            'initial_app_strings': Api.INITIAL_APP_STRINGS,
+            'initial_app_str': Api.INITIAL_APP_STR,
             'RegionCode': regionCode,
             'lg': locale,
             'custom_sessionid': customSessionId,
@@ -100,7 +100,7 @@ export class Api {
         baseEndpoint: string) {
         return await this.postForm(Api.getBaseEndpoint(regionCode, baseEndpoint) + '/BatteryStatusRecordsRequest.php',
             {
-                'initial_app_strings': Api.INITIAL_APP_STRINGS,
+                'initial_app_str': Api.INITIAL_APP_STR,
                 'RegionCode': regionCode,
                 'lg': locale,
                 'custom_sessionid': customSessionId,
@@ -121,7 +121,7 @@ export class Api {
         timeZone: string,
         baseEndpoint: string) {
         return await this.postForm(Api.getBaseEndpoint(regionCode, baseEndpoint) + '/RemoteACRecordsRequest.php', {
-            'initial_app_strings': Api.INITIAL_APP_STRINGS,
+            'initial_app_str': Api.INITIAL_APP_STR,
             'RegionCode': regionCode,
             'lg': locale,
             'custom_sessionid': customSessionId,
@@ -143,7 +143,7 @@ export class Api {
         baseEndpoint: string) {
         return await this.postForm(Api.getBaseEndpoint(regionCode, baseEndpoint) + '/ACRemoteRequest.php',
             {
-                'initial_app_strings': Api.INITIAL_APP_STRINGS,
+                'initial_app_str': Api.INITIAL_APP_STR,
                 'RegionCode': regionCode,
                 'lg': locale,
                 'custom_sessionid': customSessionId,
@@ -164,7 +164,7 @@ export class Api {
         resultKey: string,
         baseEndpoint: string) {
         return await this.postForm(Api.getBaseEndpoint(regionCode, baseEndpoint) + '/ACRemoteResult.php', {
-            'initial_app_strings': Api.INITIAL_APP_STRINGS,
+            'initial_app_str': Api.INITIAL_APP_STR,
             'RegionCode': regionCode,
             'lg': locale,
             'custom_sessionid': customSessionId,
@@ -186,7 +186,7 @@ export class Api {
         baseEndpoint: string) {
         return await this.postForm(Api.getBaseEndpoint(regionCode, baseEndpoint) + '/ACRemoteOffRequest.php',
             {
-                'initial_app_strings': Api.INITIAL_APP_STRINGS,
+                'initial_app_str': Api.INITIAL_APP_STR,
                 'RegionCode': regionCode,
                 'lg': locale,
                 'custom_sessionid': customSessionId,
@@ -208,7 +208,7 @@ export class Api {
         baseEndpoint: string) {
         return await this.postForm(Api.getBaseEndpoint(regionCode, baseEndpoint) + '/ACRemoteOffResult.php',
             {
-                'initial_app_strings': Api.INITIAL_APP_STRINGS,
+                'initial_app_str': Api.INITIAL_APP_STR,
                 'RegionCode': regionCode,
                 'lg': locale,
                 'custom_sessionid': customSessionId,
@@ -230,7 +230,7 @@ export class Api {
         baseEndpoint: string) {
         return await this.postForm(Api.getBaseEndpoint(regionCode, baseEndpoint) + '/BatteryRemoteChargingRequest.php',
             {
-                'initial_app_strings': Api.INITIAL_APP_STRINGS,
+                'initial_app_str': Api.INITIAL_APP_STR,
                 'RegionCode': regionCode,
                 'lg': locale,
                 'custom_sessionid': customSessionId,
