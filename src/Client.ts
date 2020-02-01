@@ -154,10 +154,19 @@ export class Client {
             this._baseEndpoint);
 
         let timestamp = moment(response.BatteryStatusRecords.NotificationDateAndTime, 'YYYY/MM/DD hh:mm', false).toDate();
+        let percentageCharged = 0;
+        if (response.BatteryStatusRecords.BatteryStatus.SOC !== undefined) {
+            percentageCharged = parseInt(response.BatteryStatusRecords.BatteryStatus.SOC.Value, 10);
+        } else {
+            const chargeInNissanBars = response.BatteryStatusRecords.BatteryStatus.BatteryRemainingAmount;
+            const totalNissanBars = response.BatteryStatusRecords.BatteryStatus.BatteryCapacity;
+            console.warn('Using aged battery charge calculation');
+            percentageCharged = Math.floor(100 * chargeInNissanBars / totalNissanBars);
+        }
 
         return {
-            percentageCharged: parseInt(response.BatteryStatusRecords.BatteryStatus.SOC.Value, 10),
-            chargingStatus: response.BatteryStatusRecords.BatteryChargingStatus === 'NOT_CHARGING' ? ChargingStatus.off : ChargingStatus.on,
+            percentageCharged: percentageCharged,
+            chargingStatus: response.BatteryStatusRecords.BatteryStatus.BatteryChargingStatus === 'NOT_CHARGING' ? ChargingStatus.off : ChargingStatus.on,
             timestamp: timestamp
         };
     }
